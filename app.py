@@ -4,7 +4,6 @@ from streamlit_autorefresh import st_autorefresh
 from datetime import datetime, timedelta
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 
 from funds_config import FUNDS
 from data_fetcher import fetch_fund_data, get_nifty_returns, calculate_overlap
@@ -44,60 +43,63 @@ with tabs[0]:
 
 with tabs[1]:
     st.header("Performance Metrics")
-    perf_df = df[['name', 'category', 'return_1M', 'return_3M', 'return_6M', 'return_1Y', 'return_3Y', 'return_5Y']]
-    st.dataframe(perf_df, use_container_width=True)
+    perf_cols = ['name', 'category', 'return_1M', 'return_3M', 'return_6M', 'return_1Y', 'return_3Y', 'return_5Y']
+    st.dataframe(df[perf_cols], use_container_width=True)
     
-    # Performance Chart
+    # Performance Bar Chart
     fig_perf = px.bar(df, x='name', y='return_1Y', color='category', 
-                      title="1 Year Returns Comparison", 
-                      color_discrete_sequence=px.colors.sequential.Blues)
+                      title="1 Year Returns by Fund",
+                      color_discrete_sequence=px.colors.sequential.Viridis)
     st.plotly_chart(fig_perf, use_container_width=True)
 
 with tabs[2]:
     st.header("Risk Metrics")
-    risk_df = df[['name', 'category', 'std_dev', 'beta', 'alpha']]
-    st.dataframe(risk_df, use_container_width=True)
+    risk_cols = ['name', 'category', 'std_dev', 'beta', 'alpha']
+    st.dataframe(df[risk_cols], use_container_width=True)
 
 with tabs[3]:
     st.header("Portfolio Details")
-    st.info("Top holdings, sector allocation & flows would be parsed from #fund-portfolio sections")
+    st.info("🔄 Top 10 Holdings, Sector Allocation & Flows parsed from #fund-portfolio URLs (extend scraper)")
 
 with tabs[4]:
     st.header("Overlap Analysis")
     overlap = calculate_overlap(df.to_dict('records'))
-    st.write("Common Holdings:", overlap["common_holdings"])
-    st.metric("Portfolio Overlap Score", f"{overlap['overlap_score']}%")
+    st.write("**Common Holdings Across Portfolio**:", overlap["common_holdings"])
+    st.metric("Overall Overlap Score", f"{overlap['overlap_score']}%")
 
 with tabs[5]:
-    st.header("Benchmark Comparison (Nifty 50)")
+    st.header("Benchmark Comparison (vs Nifty 50)")
     nifty_1y = get_nifty_returns()
-    st.metric("Nifty 50 - 1Y Return", f"{nifty_1y}%")
+    st.metric("Nifty 50 1Y Return", f"{nifty_1y:.2f}%")
     
-    fig_bench = px.bar(df, x='name', y='return_1Y', 
-                       title="Fund vs Nifty 1Y Returns",
-                       color_discrete_sequence=['#1f77b4'])
-    fig_bench.add_hline(y=nifty_1y, line_dash="dash", annotation_text="Nifty 50")
+    fig_bench = px.bar(df, x='name', y='return_1Y', title="Funds vs Nifty 50 (1Y)")
+    fig_bench.add_hline(y=nifty_1y, line_dash="dash", line_color="red", annotation_text="Nifty 50")
     st.plotly_chart(fig_bench, use_container_width=True)
 
 with tabs[6]:
-    st.header("📊 15th Section: Portfolio Summary")
+    st.header("📊 15th Section: Aggregated Portfolio Summary")
     col_a, col_b, col_c = st.columns(3)
     
     with col_a:
-        st.metric("Avg AUM", f"{df['aum'].str.extract('(\d+)').astype(float).mean():.0f} Cr")
-        st.metric("Avg Expense Ratio", f"{df['expense_ratio'].str.extract('(\d+\.\d+)').astype(float).mean():.2f}%")
+        avg_aum = pd.to_numeric(df['aum'].str.extract(r'(\d+)').iloc[:, 0], errors='coerce').mean()
+        st.metric("Average AUM", f"{avg_aum:.0f} Cr")
+        avg_exp = pd.to_numeric(df['expense_ratio'].str.extract(r'(\d+\.\d+)').iloc[:, 0], errors='coerce').mean()
+        st.metric("Average Expense Ratio", f"{avg_exp:.2f}%")
     
     with col_b:
         st.metric("Avg 1Y Return", f"{df['return_1Y'].mean():.1f}%")
         st.metric("Avg 3Y CAGR", f"{df['return_3Y'].mean():.1f}%")
+        st.metric("Avg 5Y CAGR", f"{df['return_5Y'].mean():.1f}%")
     
     with col_c:
         st.metric("Avg Std Dev", f"{df['std_dev'].mean():.1f}")
+        st.metric("Avg Beta", f"{df['beta'].mean():.2f}")
         st.metric("Avg Alpha", f"{df['alpha'].mean():.1f}")
     
-    health_score = round((df['return_1Y'].mean() * 0.4) + (df['alpha'].mean() * 2) - (df['std_dev'].mean() * 0.3), 1)
-    st.success(f"**Overall Portfolio Health Score: {health_score}/100**")
+    # Simple Health Score
+    health_score = round(df['return_1Y'].mean() * 0.5 + df['alpha'].mean() * 3 - df['std_dev'].mean() * 0.4, 1)
+    st.success(f"**Overall Portfolio Health Score: {health_score} / 100**")
 
 # Download
-csv = df.to_csv(index=False).encode()
-st.download_button("Download Full Portfolio Data", csv, "portfolio_data.csv", "text/csv")
+csv = df.to_csv(index=False).encode('utf-8')
+st.download_button("📥 Download Full Portfolio Data", csv, "portfolio_data.csv", "text/csv")
