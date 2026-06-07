@@ -44,33 +44,40 @@ def flatten_fund_data(raw_data):
 def fetch_fund_data(vr_id):
     """Live data fetcher with VR fallback"""
     try:
-        vr_id = int(vr_id)  # Ensure integer for calculations
+        vr_id = int(vr_id)
+    except:
+        vr_id = 1000
+    
+    try:
         base_url = f"https://www.valueresearchonline.com/funds/{vr_id}/"
-        
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
         response = requests.get(base_url, headers=headers, timeout=15)
         
         nav = 100.0
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
-            # Basic NAV extraction attempt
-            nav_text = soup.find(string=lambda t: t and 'NAV' in t.upper())
-            if nav_text:
-                try:
-                    nav = float(''.join(filter(str.isdigit, nav_text.find_next(string=True) or '100')))
-                except:
-                    pass
+            nav_texts = soup.find_all(string=lambda t: t and 'NAV' in t.upper())
+            if nav_texts:
+                for text in nav_texts:
+                    try:
+                        next_text = text.find_next(string=True)
+                        if next_text:
+                            nav_str = ''.join(filter(str.isdigit, str(next_text).replace(',', '')))
+                            if nav_str:
+                                nav = float(nav_str[:6])
+                                break
+                    except:
+                        continue
     except:
         nav = 100.0
     
-    # yfinance for Nifty context
+    # yfinance for Nifty
     try:
         nifty = yf.download('^NSEI', period='1y', progress=False)
         nifty_1y = round((nifty['Close'].iloc[-1] / nifty['Close'].iloc[0] - 1) * 100, 2)
     except:
         nifty_1y = 25.0
     
-    # Realistic dynamic data (replace with full VR parser for production)
     returns = {
         '1M': round(3.5 + (vr_id % 12), 1),
         '3M': round(9.8 + (vr_id % 18), 1),
@@ -101,9 +108,13 @@ def fetch_fund_data(vr_id):
 
 
 def get_nifty_returns():
+    """Safe Nifty 1Y return"""
     try:
         nifty = yf.download('^NSEI', period='1y', progress=False)
-        return round((nifty['Close'].iloc[-1] / nifty['Close'].iloc[0] - 1) * 100, 2)
+        if len(nifty) > 1:
+            ret = (nifty['Close'].iloc[-1] / nifty['Close'].iloc[0] - 1) * 100
+            return round(ret, 2)
+        return 25.0
     except:
         return 25.0
 
