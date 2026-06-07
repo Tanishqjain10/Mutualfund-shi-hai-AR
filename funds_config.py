@@ -1,0 +1,16 @@
+FUNDS = [
+    {"name": "Quant Large Cap Fund Direct", "vr_id": "42367", "category": "Large Cap"},
+    {"name": "SBI Large & Midcap Fund Direct", "vr_id": "16240", "category": "Large & Mid Cap"},
+    {"name": "DSP Large & Mid Cap Fund Direct", "vr_id": "16425", "category": "Large & Mid Cap"},
+    {"name": "Bandhan Large & Mid Cap Fund Direct", "vr_id": "16474", "category": "Large & Mid Cap"},
+    {"name": "Kotak Midcap Fund Direct", "vr_id": "17134", "category": "Mid Cap"},
+    {"name": "Invesco India Smallcap Fund Direct", "vr_id": "37843", "category": "Small Cap"},
+    {"name": "HDFC Small Cap Fund Direct", "vr_id": "16617", "category": "Small Cap"},
+    {"name": "HDFC Flexi Cap Fund Direct", "vr_id": "16026", "category": "Flexi Cap"},
+    {"name": "Kotak Multicap Fund Direct", "vr_id": "41707", "category": "Multi Cap"},
+    {"name": "Canara Robeco Multi Cap Fund", "vr_id": "43569", "category": "Multi Cap"},
+    {"name": "SBI Infrastructure Fund Direct", "vr_id": "17161", "category": "Sectoral"},
+    {"name": "ICICI Prudential Focused Equity Fund Direct", "vr_id": "17412", "category": "Focused"},
+    {"name": "Invesco India Focused Fund Direct", "vr_id": "41096", "category": "Focused"},
+    {"name": "ICICI Prudential Dividend Yield Equity Fund Direct", "vr_id": "26271", "category": "Dividend Yield"},
+]
