@@ -28,7 +28,7 @@ st_autorefresh(interval=60000, limit=1000, key="datarefresh")
 # Fetch and flatten data
 data = []
 for fund in FUNDS:
-    info = fetch_fund_data(fund["vr_id"])
+    info = fetch_fund_data(fund.get("vr_id", 1000))
     row = {**fund, **info}
     data.append(row)
 
@@ -46,7 +46,6 @@ with tabs[1]:
     perf_cols = ['name', 'category', 'return_1M', 'return_3M', 'return_6M', 'return_1Y', 'return_3Y', 'return_5Y']
     st.dataframe(df[perf_cols], use_container_width=True)
     
-    # Performance Bar Chart
     fig_perf = px.bar(df, x='name', y='return_1Y', color='category', 
                       title="1 Year Returns by Fund",
                       color_discrete_sequence=px.colors.sequential.Viridis)
@@ -70,10 +69,10 @@ with tabs[4]:
 with tabs[5]:
     st.header("Benchmark Comparison (vs Nifty 50)")
     nifty_1y = get_nifty_returns()
-    st.metric("Nifty 50 1Y Return", f"{nifty_1y:.2f}%")
+    st.metric("Nifty 50 1Y Return", f"{float(nifty_1y):.2f}%")
     
     fig_bench = px.bar(df, x='name', y='return_1Y', title="Funds vs Nifty 50 (1Y)")
-    fig_bench.add_hline(y=nifty_1y, line_dash="dash", line_color="red", annotation_text="Nifty 50")
+    fig_bench.add_hline(y=float(nifty_1y), line_dash="dash", line_color="red", annotation_text="Nifty 50")
     st.plotly_chart(fig_bench, use_container_width=True)
 
 with tabs[6]:
@@ -82,9 +81,9 @@ with tabs[6]:
     
     with col_a:
         avg_aum = pd.to_numeric(df['aum'].str.extract(r'(\d+)').iloc[:, 0], errors='coerce').mean()
-        st.metric("Average AUM", f"{avg_aum:.0f} Cr")
+        st.metric("Average AUM", f"{avg_aum:.0f if not pd.isna(avg_aum) else 0} Cr")
         avg_exp = pd.to_numeric(df['expense_ratio'].str.extract(r'(\d+\.\d+)').iloc[:, 0], errors='coerce').mean()
-        st.metric("Average Expense Ratio", f"{avg_exp:.2f}%")
+        st.metric("Average Expense Ratio", f"{avg_exp:.2f if not pd.isna(avg_exp) else 0}%")
     
     with col_b:
         st.metric("Avg 1Y Return", f"{df['return_1Y'].mean():.1f}%")
@@ -96,7 +95,6 @@ with tabs[6]:
         st.metric("Avg Beta", f"{df['beta'].mean():.2f}")
         st.metric("Avg Alpha", f"{df['alpha'].mean():.1f}")
     
-    # Simple Health Score
     health_score = round(df['return_1Y'].mean() * 0.5 + df['alpha'].mean() * 3 - df['std_dev'].mean() * 0.4, 1)
     st.success(f"**Overall Portfolio Health Score: {health_score} / 100**")
 
